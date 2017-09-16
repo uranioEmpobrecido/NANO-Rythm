@@ -14,19 +14,23 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 
-#define startButton  0
-#define resetButton  1
 #define      sound1  4
 #define      sound2  5
 #define      sound3  6
 #define      sound4  7
 
+#define startButton  8
+#define resetButton  9
+
+#define  tempoLed    2
+#define recordLed    1
+
+#define  speakerPin  3
+
 #define       tempo A0
 
-#define   Threshold  4
-
 uint16_t SAMPLE_RATE    =  8000;
-int speakerPin = 3;
+
 
 unsigned char const *sounddata_data=0;
 int sounddata_length=0;
@@ -142,6 +146,11 @@ unsigned char const static snare[] PROGMEM = //clap
 
 uint16_t snare_length = 840;
 
+unsigned char const static voidSound[] PROGMEM =
+{ 0 };
+
+uint16_t voidSound_length = 1;
+
 // This is called at 8000 Hz to load the next sample.
 ISR(TIMER1_COMPA_vect) {
   
@@ -234,7 +243,7 @@ void deleteBeat(void){
 
 void beatPlay(void){
 
-  if (digitalRead(startButton)){
+  if (!digitalRead(startButton)){
     stateBeat = true;
     if (prevStateBeat != stateBeat){
       beatRun = !beatRun;
@@ -242,7 +251,7 @@ void beatPlay(void){
     }
   } else { stateBeat = false; }
 
-  if (digitalRead(resetButton)){
+  if (!digitalRead(resetButton)){
     startPlayback(blip,blip_length);
     deleteBeat();
     delay(1000);
@@ -251,6 +260,7 @@ void beatPlay(void){
   if (beatRun){
 
   if (countBeat >= ((analogRead(tempo)/2)+50)){
+    digitalWrite(tempoLed, !digitalRead(tempoLed));
     patternBeat++;
     countBeat = 0;
   }
@@ -307,45 +317,49 @@ void beatPlay(void){
 
 uint16_t mapLength(unsigned char * sound){
 
-  if (sound == kick) { return kick_length   ;}
-  if (sound == snare){ return snare_length  ;}
-  if (sound == tick) { return tick_length   ;}
-  if (sound ==cowbell){return cowbell_length;}
-  if (sound == blip) { return blip_length   ;}
-  if (sound == hat)  { return hat_length    ;}
-  
+  if (sound == kick)       { return kick_length     ;}
+  if (sound ==cowbell)     { return cowbell_length  ;}
+  if (sound == snare)      { return snare_length    ;}
+  if (sound == hat)        { return hat_length      ;}
+  if (sound == voidSound)  { return voidSound_length;}
 }
 
 unsigned char * mapBeat(void){
 
   while (!beatOK){
-  if (digitalRead(sound1)){
+  if (!digitalRead(sound1)){
     startPlayback(kick,kick_length);
     beatOK = true;
     return kick;
     }
-  else if (digitalRead(sound2)){
+  else if (!digitalRead(sound2)){
     startPlayback(cowbell,cowbell_length);
     beatOK = true;
     return cowbell;
     }
-  else if (digitalRead(sound3)){
+  else if (!digitalRead(sound3)){
     startPlayback(snare,snare_length);
     beatOK = true;
     return snare;
     }
-  else if (digitalRead(sound4)){
+  else if (!digitalRead(sound4)){
     startPlayback(hat,hat_length);
     beatOK = true;
-    return clap;
+    return hat;
+    }
+  else if (!digitalRead(startButton)){
+    beatOK = true;
+    return voidSound;
     }
   }
 }
 
 void setBeatSequence(void){
 
-  delay(500);
+  digitalWrite(recordLed,HIGH);
 
+  startPlayback(blip,blip_length);
+  delay(200);
   startPlayback(blip,blip_length);
   
   while (!selectBeat1){
@@ -427,11 +441,13 @@ void setBeatSequence(void){
   delay(500);
 
   startPlayback(blip,blip_length);
+
+  digitalWrite(recordLed,LOW);
 }
 
 void BeatEffect(void){
 
-  if (digitalRead(resetButton) || beatOn){
+  if (!digitalRead(resetButton) || beatOn){
     if (!setBeat){
       setBeatSequence();
       setBeat = true;
@@ -441,26 +457,26 @@ void BeatEffect(void){
   }
 
   
-  if (digitalRead(sound1)){
-    while (digitalRead(sound1)){
+  if (!digitalRead(sound1)){
+    while (!digitalRead(sound1)){
       //Nothing
     }
     startPlayback(kick,kick_length);
   }
-  if (digitalRead(sound2)){
-    while (digitalRead(sound2)){
+  if (!digitalRead(sound2)){
+    while (!digitalRead(sound2)){
       //Nothing
     }
     startPlayback(cowbell,cowbell_length);
   }
-    if (digitalRead(sound3)){
-    while (digitalRead(sound3)){
+    if (!digitalRead(sound3)){
+    while (!digitalRead(sound3)){
       //Nothing
     }
     startPlayback(snare,snare_length);
   }
-    if (digitalRead(sound4)){
-    while (digitalRead(sound4)){
+    if (!digitalRead(sound4)){
+    while (!digitalRead(sound4)){
       //Nothing
     }
     startPlayback(hat,hat_length);
@@ -475,6 +491,11 @@ void GPIOSetup(void){
   pinMode(sound2,INPUT_PULLUP);
   pinMode(sound3,INPUT_PULLUP);
   pinMode(sound4,INPUT_PULLUP);
+
+  pinMode(tempoLed,OUTPUT);
+  pinMode(recordLed,OUTPUT);
+  
+  pinMode(speakerPin,OUTPUT);
 }
 
 
