@@ -23,6 +23,6 @@ void setup() {
 }
 
 void loop() {
-
+  //Sound processing
   BeatEffect();
 }
