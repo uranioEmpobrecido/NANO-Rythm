@@ -18,11 +18,11 @@
 #define      sound3  6
 #define      sound4  7
 
-#define startButton  8
-#define resetButton  9
+#define startButton  9
+#define resetButton  8
 
 #define  tempoLed    2
-#define recordLed    1
+#define recordLed    10
 
 #define  speakerPin  3
 
